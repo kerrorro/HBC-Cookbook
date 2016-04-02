@@ -49,6 +49,7 @@ def main():
 
         recipe_links = getLinks(newRecipe)
 
+    # Populated database
     for recipe in exampleDatabase:
         print (recipe)
 
