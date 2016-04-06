@@ -1,10 +1,11 @@
 """
 Created by Caroline Chen on 4/1/16
-Last Updated: 4/1/16
+Last Updated: 4/5/16
 Description:
-            This webcrawler finds and crawls through recipe articles from foodnetwork.com by capitalizing on the
-            "related" recipe subsection. It will be used to populate a recipe box database with the desired number
-            of recipes.
+            This webcrawler finds and crawls through recipe articles from foodnetwork.com by using BeautifulSoup
+            to search a page for all hrefs and within those hrefs to determine whether the link is actually a recipe.
+            It will be used to populate a recipe box database with the desired number of recipes by parsing ingredients,
+            cooking times, servings, level, directions, and recipe title.
 
 """             
 
@@ -78,6 +79,7 @@ def extractYieldAndLevel(bsObj):
             elif ("yield" in data.lower()):
                 servings = data.strip().split("\n")
                 servings = servings[-1]
+                servings = extractInt(servings)
                 print ("Servings:", servings)
     except AttributeError:
         print ("Could not parse servings/level")
@@ -88,12 +90,31 @@ def extractYieldAndLevel(bsObj):
         
 def extractDirections(bsObj):
     try:
-        # Obtains directions
-        directions = bsObj.find("div", {"itemprop":"recipeInstructions"}).findAll("p")
-        for step in directions:
-            print(step.get_text())
-    except AttributeError:
+        # Obtains directions which are located because the "<hr>" break in the div if applicable
+        tags = bsObj.find("div", {"itemprop":"recipeInstructions"}).findAll("p")
+        markup = ""
+        for tag in tags:
+            markup += str(tag).strip()
+        breakIndex = markup.find("<hr>")
+        if (breakIndex != -1):
+            markup = markup[:breakIndex]
+        
+        # Splits the markup based on paragraph tags by first replacing them with "<>"
+        markup = markup.replace("<p>", "<>")
+        markup = markup.replace("</p>", "<>")
+        markup = markup.split("<>")
+        directions = []
+        for text in markup:
+            text = text.strip()
+            if (text == ""):
+                continue
+            # Replaces other tags found in each <p> tag with an empty string
+            text = re.sub("<[ -~]*?>", "", text)
+            directions.append(text)
+        print(directions)
+    except AttributeError as e:
         print ("Could not parse directions")
+        print (e)
         pass
     finally:
         print()
@@ -136,15 +157,10 @@ def extractCategories(bsObj):
     
 def extractData(html):
     bsObj = BeautifulSoup(html, "html.parser")
-    
-    data = {extractIngredients(bsObj): "ingredients",
-            extractCookingTimes(bsObj): "cooking times",
-            extractRecipeTitle(bsObj): "recipe title",
-            extractYieldAndLevel(bsObj): "servings",
-            extractDirections(bsObj): "directions",
-            extractCategories(bsObj): "categories"}
-
-    for func, info in data.items():
+    data = [extractRecipeTitle(bsObj), extractIngredients(bsObj), extractCookingTimes(bsObj),
+            extractYieldAndLevel(bsObj), extractDirections(bsObj), extractCategories(bsObj)]
+    # Uses lambda to call each extract function in the data list
+    for func in data:
         (lambda x: x)(func)
 
 
@@ -166,12 +182,6 @@ def extractInt(string):
 def has_href_but_no_classid(tag):
     return tag.name == "a" and tag.has_attr("href") and not (tag.has_attr("id") or tag.has_attr("class"))
 
-# Checks if the link begins
-#def match(link):
-#    return lambda link: re.match("<a href=\"\/recipes\/", link)
-
-def applyBsStringMethod(bsObj):
-    return bsObj.string
 
 def getLinks(articleUrl):
     html = urlopen("http://foodnetwork.com" + articleUrl)
@@ -194,9 +204,11 @@ def getLinks(articleUrl):
     for href in match:
         url = urlopen("http://foodnetwork.com" + href)
         bsObjComment = BeautifulSoup(url, "html.parser")
-        comments = bsObjComment.find("head").findAll(text = lambda text: isinstance(text, Comment))
-        if ('pagetype: recipe' in comments) and (href not in recipes):
-            recipes.append(href)
+        head = bsObjComment.find("head")
+        if (head is not None):
+            comments = bsObjComment.find("head").findAll(text = lambda text: isinstance(text, Comment))
+            if ('pagetype: recipe' in comments) and (href not in recipes):
+                recipes.append(href)
             
     return recipes
 
@@ -205,26 +217,39 @@ def getLinks(articleUrl):
 
 def main():
 
-    # Starts the crawler on article url specified
+    # Starts the crawler on article url specified and initializes a string to store the previous recipe
     newRecipe = "/recipes/food-network-kitchens/roast-chicken-with-spring-vegetables-recipe.html"
+    previousRecipe = ""
     exampleDatabase = []
-    maxDatabaseLength = 10
+    maxDatabaseLength = 20
     countDuplicates = 0
+    numRetry = 0
     
-    # Continues to crawl through related recipe links until database is populated to desired length.
-    while (len(exampleDatabase) <= maxDatabaseLength):
+    # Continues to crawl through related recipe links until database is populated to desired length
+    while (len(exampleDatabase) < maxDatabaseLength):
         print("################### new ########################")
-        previousRecipe = newRecipe
+        # Gets a list of links corresponding to recipes off of the new recipe page
         recipe_links = getLinks(newRecipe)
+        print("~~~~~~~~POSSIBLE RECIPES:", len(recipe_links), "~~~~~~~~~~")
         try:
-            
+            # If there are no recipe links, gets the list of links from the previously saved page
+            if (len(recipe_links) == 0):
+                numRetry += 1
+                recipe_links = getLinks(previousRecipe)
+                # If there was only one path on the previous link, then try crawling from designated page
+                if (len(recipe_links) == 0):
+                    recipe_links = ["/recipes/sunny-anderson/easy-grilled-pork-chops-recipe.html"]
+
+            # Selects a random recipe from the links generated
             newRecipe = recipe_links[random.randint(0, len(recipe_links)-1)]
-            while(newRecipe == previousRecipe):
-                newRecipe = recipe_links[random.randint(0, len(recipe_links)-1)]
                 
-        #if (len(recipe_links) == 0):
-        except ValueError:
-            recipe_links = getLinks(previousRecipe)
+        except Exception as e:
+            print(e)
+            print("..................................................................")
+            print("..................................................................")
+            print(".................       ERROR       ..............................")
+            print("..................................................................")
+            print("..................................................................")
 
         
         print("New: ", newRecipe)
@@ -233,31 +258,30 @@ def main():
             html = urlopen("http://www.foodnetwork.com" + newRecipe)
         except HTTPError as e:
             print(e)
-        else:            
+        else:
+
+            # Checks for duplicate recipes before extracting data and populating database
             if newRecipe not in exampleDatabase:
                 print("************************************")
                 print("*********EXTRACTING RECIPE**********")
                 print("************************************")
                 extractData(html)
                 exampleDatabase.append(newRecipe)
-                
-            # Check for duplicate recipes before populating database
-            #if newRecipe not in exampleDatabase:
-                
-                
-            # Generate new links to crawl from the "More recipes like this" section.
-            # If it does not exist in the article, use the link from the previous
-            # article to find a different crawl path.
-            
-            
+
+                # Stores the extracted recipe as the previous recipe before looking for a new one
+                previousRecipe = newRecipe
+            else:
+                countDuplicates += 1
             
                 
 
     # Populated database
+    print("These recipes were added to your database:")
     for recipe in exampleDatabase:
         print (recipe)
 
     print()
-    print("Number of duplicates skipped:", countDuplicates)
+    print("Duplicates skipped:", countDuplicates)
+    print("Number of retries:", numRetry)
 
 main()
