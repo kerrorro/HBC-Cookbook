@@ -16,12 +16,37 @@ import random
 import re
 
 
+def convertToMin(raw_time):
+    time = raw_time.replace(" ", "")
+    # Reports time in minutes by converting digits corresponding to hours. Functional if no hour digits are present.
+    digitHolder = ""
+    minutes = 0
+    for ch in time:
+        if (re.match('[0-9]', ch) is not None):
+            digitHolder = digitHolder + ch
+        elif (ch.lower() == "h"):
+            hours = float(digitHolder)
+            minutes = hours * 60
+            # Resets to capture minute digits
+            digitHolder = ""
+        elif (ch.lower() == "m"):
+            if (digitHolder == ""):
+                digitHolder = 0
+            minutes = minutes + float(digitHolder)
+            break
+            
+    return int(minutes)
+    
+
 def extractIngredients(bsObj):
     try:
         # Obtains list of ingredients
         ingredientList = bsObj.find("section", {"class":"ingredients-instructions recipe-instructions section"}).findAll("li", {"itemprop": "ingredients"})
+        ingredientText = []
         for ingredient in ingredientList:
             print(ingredient.get_text())
+            ingredientText.append(ingredient.get_text())
+        return {"INGREDIENTS":ingredientText}
     except AttributeError:
         print ("Could not parse ingredients")
         pass
@@ -31,23 +56,30 @@ def extractIngredients(bsObj):
 
 def extractCookingTimes(bsObj):
     try:
-        # Obtains times
+        # Returns a dictionary of times
         cookingTimes = bsObj.find("div", {"class": "cooking-times"}).dl.children
+        timeDict = {}
         for time in cookingTimes:
             if (time.name == "dt"):
                 if ("total" in time.get_text().lower()):
                     totalTime = time.next_sibling.get_text()
+                    totalTime = convertToMin(totalTime)
+                    timeDict["total"] = totalTime
                     print("Total Time:", totalTime)
                 elif ("prep" in time.get_text().lower()):
                     prepTime = time.next_sibling.get_text()
+                    prepTime = convertToMin(prepTime)
+                    timeDict["prep"] = prepTime
                     print ("Prep Time:", prepTime)
                 elif ("cook" in time.get_text().lower()):
                     cookTime = time.next_sibling.get_text()
+                    cookTime = convertToMin(cookTime)
+                    timeDict["cook"] = cookTime
                     print ("Cook Time:", cookTime)
-                print()
+        return {"TIMES" : timeDict}
     except AttributeError:
         print ("Could not parse cooking times")
-        pass
+        return None
     finally:
         print()
         print()
@@ -58,9 +90,10 @@ def extractRecipeTitle(bsObj):
         # Obtains recipe name
         recipeName = bsObj.find("h1", {"itemprop": "name"}).get_text()
         print(recipeName)
+        return {"TITLE": recipeName}
     except AttributeError:
         print ("Could not parse recipe title")
-        pass
+        return None
     finally:
         print()
         print()
@@ -69,26 +102,33 @@ def extractYieldAndLevel(bsObj):
     try:
         # Obtains number of servings and difficulty
         information = bsObj.find("div", {"class": "difficulty"}).findAll("dl")
-        for text in information:
-            data = text.get_text()
+        data = {}
+        for raw_text in information:
+            text = raw_text.get_text()
             
-            if ("level" in data.lower()):
-                level = data.strip().split("\n")
+            if ("level" in text.lower()):
+                level = text.strip().split("\n")
                 level = level[-1]
                 print ("Level:", level)
-            elif ("yield" in data.lower()):
-                servings = data.strip().split("\n")
+                data["LEVEL"] = level
+            elif ("yield" in text.lower()):
+                servings = text.strip().split("\n")
                 servings = servings[-1]
-                servings = extractInt(servings)
+                # Gets rid of the "serving(s)" unit
+                if ("serving" in servings.lower()):
+                    servings = servings[:servings.find("serving")]
                 print ("Servings:", servings)
+                data["SERVINGS"] = servings
+        
+        return data
     except AttributeError:
         print ("Could not parse servings/level")
-        pass
+        return None
     finally:
         print()
         print()
         
-def extractDirections(bsObj):
+def extractAuthorAndDirections(bsObj):
     try:
         # Obtains directions excluding extra, redundant information
         EXCLUDE = ["cook time", "prep time", "yield:", "ease of preparation:", "serving:", "photograph by"]
@@ -127,10 +167,10 @@ def extractDirections(bsObj):
             if (not any(x in text.lower() for x in EXCLUDE)):
                 directions.append(text)
         print(directions)
+        return {"AUTHOR" : author, "DIRECTIONS" : directions}
     except AttributeError as e:
         print ("Could not parse directions")
-        print (e)
-        pass
+        return None
     finally:
         print()
         print()
@@ -143,14 +183,14 @@ def extractCategories(bsObj):
         raw_categories = bsObj.find("script", {"data-popover":"categories"}).get_text()
         raw_categories = raw_categories.splitlines()
 
-        categoryDict = {}
+        data = {}
         valueList = []
         for category in raw_categories:
             category = category.strip()
             if ("</li>" in category):
                 if ("</a>" not in category):
                     match = re.match("(^<li[\w =\"]*>)(.+)(</li>$)", category)
-                    key = match.group(2)
+                    key = match.group(2).upper()
                 else:
                     match = re.match("(^<li[\w =\"]*>)(<a href[\w =.\"/-]*>)(.+)(</a></li>$)", category)
                     value = match.group(3)
@@ -159,42 +199,33 @@ def extractCategories(bsObj):
                     # In this case, resets value count
                     last = re.search("class=\"last\"" , category)
                     if (last):
-                        categoryDict[key] = valueList
+                        data[key] = valueList
                         valueList = []
-        print (categoryDict)
+        print (data)
+        return {"CATEGORIES" : data}
     except AttributeError:
         print ("Could not parse categories")
-        pass
+        return None
     finally:
         print()
         print()
         
     
-def extractData(html):
-    bsObj = BeautifulSoup(html, "html.parser")
-    extractFunctions = [extractRecipeTitle, extractIngredients, extractCookingTimes,
-            extractYieldAndLevel, extractDirections, extractCategories]
-    for f in extractFunctions:
-        f(bsObj)
-    # Uses lambda to call each extract function in the data list
-    #for func in data:
-    #    (lambda x: x)(func)
 
-
-
-	
-
-
-# Extracts the integers out of a string.
-def extractInt(string):
-    digitHolder = ""
-    # Extracts number of servings from the string servingsMatch
-    for ch in string:
-        if (re.match('[0-9]', ch) is not None):
-            digitHolder = digitHolder + ch
-    digits = int(digitHolder)
-    return digits
-
+# Writes to extractedRecipes text file with correct format
+def dataProcessing(data, file):
+    if (isinstance(data, str)):
+        file.write(data + "\n")
+    elif(isinstance(data, int)):
+        dataProcessing(str(data), file)
+    elif (isinstance(data, list)):
+        for string in data:
+            dataProcessing(string, file)
+    elif (isinstance(data, dict)):
+        for key, value in data.items():
+            dataProcessing(key, file)
+            dataProcessing(value, file)
+            file.write("\n")
 
 def has_href_but_no_classid(tag):
     return tag.name == "a" and tag.has_attr("href") and not (tag.has_attr("id") or tag.has_attr("class"))
@@ -233,6 +264,8 @@ def getLinks(articleUrl):
 
 
 def main():
+    txtFile = open("extractedRecipes.txt", "a")
+    
 
     # Starts the crawler on article url specified and initializes a string to store the previous recipe
     newRecipe = "/recipes/food-network-kitchens/roast-chicken-with-spring-vegetables-recipe.html"
@@ -284,7 +317,16 @@ def main():
                 print("************************************")
                 print("*********EXTRACTING RECIPE**********")
                 print("************************************")
-                extractData(html)
+        
+                bsObj = BeautifulSoup(html, "html.parser")
+                extractFunctions = [extractRecipeTitle, extractIngredients, extractCookingTimes,
+                                    extractYieldAndLevel, extractAuthorAndDirections, extractCategories]
+                for f in extractFunctions:
+                    data = f(bsObj)
+                    if (data is None):
+                        continue
+                    dataProcessing(data, txtFile)
+
                 exampleDatabase.append(newRecipe)
 
                 # Stores the extracted recipe as the previous recipe before looking for a new one
@@ -302,5 +344,7 @@ def main():
     print()
     print("Duplicates skipped:", countDuplicates)
     print("Number of retries:", numRetry)
+
+    txtFile.close()
 
 main()
