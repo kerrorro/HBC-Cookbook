@@ -102,7 +102,7 @@ def processIngredient(ingredient):
         else:
             IGNORE.append(measurementCandidate)
             measurement = None
-    """    
+    
     # If the measurement candidate has never been seen before:
     if ((measurementCandidate not in measurementDB) and (measurementCandidate not in IGNORE)):
         validResponse = False
@@ -130,7 +130,7 @@ def processIngredient(ingredient):
     # If the candidate is already in the measurementDB:
     else:
         measurement = measurementCandidate
-    """       
+       
     # Updates the ingredient string without the measurement
     if (measurement is not None):
         ingredient = ingredient[len(measurement) + 1:]
@@ -180,14 +180,17 @@ def main():
                 ingredient = ingredientLineComp[2]
                 if (ingredient not in ingredientDB):
                     insert("ingredient", "ingredient_name", strDB(ingredient))
+                    
                     ingredientDB.append(ingredient)
                 # Grabs ingredient_id for the added ingredient
                 select("ingredient_id", "ingredient", conditionCol = "ingredient_name", conditionVal = strDB(ingredient))
                 ingredient_id = cur.fetchone()[0]
                 #print("*************ingredient_id = ", ingredient_id, type(ingredient_id))
-                # Updates junction table with recipe_id, ingredient_id, measurement_type, and quantity if the ingredient isn't already listed for that recipe
+                # Inserts into junction table with recipe_id, ingredient_id, measurement_type, and quantity if the ingredient isn't already listed for that recipe
                 if (ingredient not in ingredientsPerRecipe):
                     ingredientsPerRecipe.append(ingredient)
+                    insert("recipeingredient", "recipe_id, ingredient_id", str(recipe_id) + ", " + str(ingredient_id))
+                    
                     if (quantity is not None):
                         if (measurement is not None):
                             # No null columns
@@ -205,7 +208,9 @@ def main():
                         else:
                             # Null measurement and quantity
                             insert("recipeingredient", "recipe_id, ingredient_id",
-                                    str(recipe_id) + ", " + str(ingredient_id))    
+                                    str(recipe_id) + ", " + str(ingredient_id))
+
+                    
                     
         elif (line == "TIMES"):
             timeDict = {}
