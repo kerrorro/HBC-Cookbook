@@ -58,6 +58,17 @@ def insert(table, columns, values):
     print("*** EXECUTED SQL STATEMENT ***")
     print("INSERT INTO %s(%s) VALUES (%s)" % (table, columns, values))
 
+# Adds an escape for characters that will be inserted as part of MySQL statements
+def escapeCharCheck(string):
+    specialCharList = ["'", '"', "\\", "%", "_"]
+    fixedString = ""
+
+    for i in range(len(string)):
+        if (string[i] in specialCharList):
+            fixedString += "\\"
+        fixedString += string[i]
+    return fixedString
+
 # Used to pass variables as strings into functions that change the database
 def strDB(text):
     return "'" + str(text) + "'"
@@ -77,6 +88,7 @@ def main():
     
     file = open('extractedRecipes.txt', 'r')
     readingRecipe = True
+    recipe_id = 0
     while (readingRecipe):
         line = file.readline().strip()
         print ("-------------------------------------")
@@ -84,18 +96,22 @@ def main():
         ingredients = []
         if (line == "TITLE"):
             title = file.readline().strip()
+            title = escapeCharCheck(title)
+            recipe_id += 1
+            print(title)
             # Creates a field in the recipe table with null author and servings
             insert("recipe", "recipe_name", strDB(title))
             # Grabs recipe_id for the added recipe
-            select("recipe_id", "recipe", conditionCol = "recipe_name", conditionVal = strDB(title))
-            recipe_id = cur.fetchone()[0]
+            #select("recipe_id", "recipe", conditionCol = "recipe_name", conditionVal = strDB(title))
+            #recipe_id = cur.fetchone()[0]
             #print("*************RECIPE_id = ", recipe_id, type(recipe_id))
         elif (line == "INGREDIENTS"):
-            ingredientLine = line
+            ingredient = line
             ingredientsPerRecipe = []
-            while (ingredientLine != ""):
+            while (ingredient != ""):
                 print()
                 ingredient = file.readline().strip()
+                ingredient = escapeCharCheck(ingredient)
                 if (ingredient == ""):
                     continue
                 if (ingredient not in ingredientDB):
@@ -117,6 +133,7 @@ def main():
             consecNewLineCount = 0
             while (consecNewLineCount != 2):
                 timeLines = file.readline().strip()
+                timeLines = escapeCharCheck(timeLines)
                 if (timeLines == ""):
                     consecNewLineCount += 1
                     continue
@@ -131,16 +148,19 @@ def main():
         elif (line == "SERVINGS"):
             # Updates the recipe table with the recipe's serving
             servings = file.readline().strip()
+            servings = escapeCharCheck(servings)
             update("recipe", "servings", strDB(servings), "recipe_id", str(recipe_id))            
             
         elif (line == "LEVEL"):
             level = file.readline().strip()
+            level = escapeCharCheck(level)
             insert("difficulty", "recipe_id, difficulty_level",
                        str(recipe_id) + ", " + strDB(level))
             
         elif (line == "AUTHOR"):
             # Updates the recipe table with the recipe's author(s)
             author = file.readline().strip()
+            author = escapeCharCheck(author)
             update("recipe", "author_name", strDB(author), "recipe_id", str(recipe_id))
             
         elif (line == "DIRECTIONS"):
@@ -149,6 +169,7 @@ def main():
             while (directionLine != ""):
                 
                 directionLine = file.readline().strip()
+                directionLine = escapeCharCheck(directionLine)
                 if (directionLine == ""):
                     break
                 directionList.append(directionLine)
@@ -162,6 +183,7 @@ def main():
             while (consecNewLineCount != 2):
                 print()
                 categoryLine = file.readline().strip()
+                categoryLine = escapeCharCheck(categoryLine)
                 if (categoryLine == ""):
                     consecNewLineCount += 1
                     continue
@@ -175,6 +197,7 @@ def main():
                     subcategoryLine = categoryLine
                     while(subcategoryLine != ""):
                         subcategoryLine = file.readline().strip()
+                        subcategoryLine = escapeCharCheck(subcategoryLine)
                         if (subcategoryLine == ""):
                             consecNewLineCount += 1
                             break
