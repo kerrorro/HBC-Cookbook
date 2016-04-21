@@ -60,7 +60,7 @@ def main():
             for row in rows:
                 print (row)
             print("")
-            # Need to pull directions time and ingredients
+            # Pulls and print the direction, ingredients and time of the recipe
             recipe_id = str(input('Select a recipe, using the recipe id, from above: '))
             selectionString1 = 'Select ingredient_name FROM ingredient_view where recipe_id = ' + recipe_id
             selectionString2 = 'Select step_number, directions from directions where recipe_id = ' + recipe_id 
@@ -89,7 +89,6 @@ def main():
             author = input('Enter a chef from above: ')
             author = "%" + author + "%"
             author = checkString(author)
-            # Look at inner join code to write an inner join
             selectionString = "Select * FROM Recipe WHERE author_name LIKE " + author
             cur.execute(selectionString)
             print(cur.fetchall())
@@ -106,7 +105,11 @@ def main():
         elif queryChoice == '3':
             ingredient = input('Enter an ingredient you would like to search recipes for: ')
             ingredient = checkString(ingredient)
-            # Finish searching for ingredients
+            ingredient = "%" + ingredient + "%"
+            ingredient = checkString(ingredient)
+            selectionString = "Select * FROM recipeIngredient WHERE ingredient LIKE " + ingredient
+            cur.execute(selectionString)
+            print(cur.fetchall())
             recipe_id = str(input('Select a recipe, using the recipe id, from above: '))
             selectionString1 = 'Select ingredient_name FROM ingredient_view where recipe_id = ' + recipe_id
             selectionString2 = 'Select step_number, directions from directions where recipe_id = ' + recipe_id 
@@ -133,8 +136,24 @@ def main():
             cur.execute(selectionString3)
             print(cur.fetchall())
         elif queryChoice == '5':
-            pass
-
+            cur.execute('Select * FROM difficulty')
+            print(cur.fetchall())
+            difficulty = input('Select a difficulty from above: ')
+            difficulty = checkString(difficulty)
+            # This might need a LIKE operator instead
+            selectionString = 'Select * FROM difficulty_view WHERE difficulty_level = ' + difficulty
+            cur.execute(selectionString)
+            print(fetchall())
+            recipe_id = str(input('Select a recipe, using the recipe id, from above: '))
+            selectionString1 = 'Select ingredient_name FROM ingredient_view where recipe_id = ' + recipe_id
+            selectionString2 = 'Select step_number, directions from directions where recipe_id = ' + recipe_id 
+            selectionString3 = 'Select time_type, minutes from time_view where recipe_id = ' + recipe_id
+            cur.execute(selectionString1)
+            print(cur.fetchall())
+            cur.execute(selectionString2)
+            print(cur.fetchall())
+            cur.execute(selectionString3)
+            print(cur.fetchall())
         yn = str(input('Would you like to continue? Enter yes or no: '))
         if yn == "no":
             loop = "no"
