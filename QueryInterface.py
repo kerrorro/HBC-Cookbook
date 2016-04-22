@@ -1,5 +1,10 @@
 import pymysql
+# Initiates PyMySQL connection and then creates a cursor
+conn = pymysql.connect(host='127.0.0.1', port=3306, charset = 'utf8',
+                        user='root', passwd= '79461385258', db = 'cookbook')
+cur = conn.cursor()
 
+# Adds quotes to items that need it before executed as SQL statements
 def checkString(string):
     if (string[0] == "'" and string[-1] == "'"):
         return string
@@ -8,13 +13,34 @@ def checkString(string):
     else:
         return "'" + string + "'"
 
+# Prints each element from the return list of tuples obtained from cur.fetchall()
+def printFormattedSQL(sqlOutput):
+    for element in sqlOutput:
+        print(element)
+
+# Prints out all releventa information associated with an input recipe_id
+def pullRecipe(recipe_id):
+    selectionString1 = 'Select ingredient_name FROM ingredient_view where recipe_id = ' + recipe_id
+    selectionString2 = 'Select step_number, directions from directions where recipe_id = ' + recipe_id 
+    selectionString3 = 'Select time_type, minutes from time_view where recipe_id = ' + recipe_id
+    print("")
+    print("Ingredients")
+    cur.execute(selectionString1)
+    printFormattedSQL(cur.fetchall())
+    print("")
+    print("Directions")
+    cur.execute(selectionString2)
+    printFormattedSQL(cur.fetchall())
+    print("")    
+    print("Time in minutes")
+    cur.execute(selectionString3)
+    printFormattedSQL(cur.fetchall())
+    print("")
+            
 def main():
     loop = "yes"
     while loop == "yes":
-        # Initiates PyMySQL connection and then creates a cursor
-        conn = pymysql.connect(host='127.0.0.1', port=3306, charset = 'utf8',
-                           user='root', passwd= 'aznxdog94', db = 'cookbook')
-        cur = conn.cursor()
+        
         # Prints the list of possible queries
         print('HBC Cookbook\n')
         print('Choose between the following options:\n')
@@ -35,8 +61,7 @@ def main():
             print("Categories: ")
             cur.execute('Select * FROM Category')
             rows = cur.fetchall()
-            for row in rows:
-                print (row)
+            printFormattedSQL(rows)
             # Prompts user to select a category
             category = str(input('Enter a category: '))
             category = checkString(category)
@@ -45,9 +70,7 @@ def main():
             # Executes and prints the list of subcategories that connects to chosen category
             print("Subcategories within " + category + " : " )
             cur.execute(string)
-            rows = cur.fetchall()
-            for row in rows:
-                print (row)
+            printFormattedSQL(cur.fetchall())
             # Creates a string to use for the next SQL command
             subCategory = input('Enter a subcategory: ')
             subCategory = checkString(subCategory)
@@ -56,104 +79,51 @@ def main():
             # Executes and print final query
             print("Recipe(s) in the " + subCategory + " subcategory")
             cur.execute(selectionString)
-            rows = cur.fetchall()
-            for row in rows:
-                print (row)
+            printFormattedSQL(cur.fetchall())
             print("")
             # Pulls and print the direction, ingredients and time of the recipe
             recipe_id = str(input('Select a recipe, using the recipe id, from above: '))
-            selectionString1 = 'Select ingredient_name FROM ingredient_view where recipe_id = ' + recipe_id
-            selectionString2 = 'Select step_number, directions from directions where recipe_id = ' + recipe_id 
-            selectionString3 = 'Select time_type, minutes from time_view where recipe_id = ' + recipe_id
-            print("")
-            print("Ingredients")
-            cur.execute(selectionString1)
-            rows = cur.fetchall()
-            for row in rows:
-                print (row)
-            print("")
-            print("Directions")
-            cur.execute(selectionString2)
-            rows = cur.fetchall()
-            for row in rows:
-                print (row)
-            print("")    
-            print("Time")
-            cur.execute(selectionString3)
-            print(cur.fetchall())
-            print("")
+            pullRecipe(recipe_id)
         elif queryChoice == '2':
             # Prints a list of authors
             cur.execute('Select DISTINCT author_name FROM Recipe')
-            print(cur.fetchall())
+            printFormattedSQL(cur.fetchall())
             author = input('Enter a chef from above: ')
             author = "%" + author + "%"
             author = checkString(author)
-            selectionString = "Select * FROM Recipe WHERE author_name LIKE " + author
+            selectionString = "Select recipe_id, recipe_name FROM Recipe WHERE author_name LIKE " + author
+            print("")
             cur.execute(selectionString)
-            print(cur.fetchall())
+            printFormattedSQL(cur.fetchall())
             recipe_id = str(input('Select a recipe, using the recipe id, from above: '))
-            selectionString1 = 'Select ingredient_name FROM ingredient_view where recipe_id = ' + recipe_id
-            selectionString2 = 'Select step_number, directions from directions where recipe_id = ' + recipe_id 
-            selectionString3 = 'Select time_type, minutes from time_view where recipe_id = ' + recipe_id
-            cur.execute(selectionString1)
-            print(cur.fetchall())
-            cur.execute(selectionString2)
-            print(cur.fetchall())
-            cur.execute(selectionString3)
-            print(cur.fetchall())
+            pullRecipe(recipe_id)
         elif queryChoice == '3':
             ingredient = input('Enter an ingredient you would like to search recipes for: ')
-            ingredient = checkString(ingredient)
             ingredient = "%" + ingredient + "%"
             ingredient = checkString(ingredient)
-            selectionString = "Select * FROM recipeIngredient WHERE ingredient LIKE " + ingredient
+            selectionString = "Select * FROM ingredient_view WHERE ingredient_name LIKE " + ingredient
             cur.execute(selectionString)
-            print(cur.fetchall())
+            printFormattedSQL(cur.fetchall())
             recipe_id = str(input('Select a recipe, using the recipe id, from above: '))
-            selectionString1 = 'Select ingredient_name FROM ingredient_view where recipe_id = ' + recipe_id
-            selectionString2 = 'Select step_number, directions from directions where recipe_id = ' + recipe_id 
-            selectionString3 = 'Select time_type, minutes from time_view where recipe_id = ' + recipe_id
-            cur.execute(selectionString1)
-            print(cur.fetchall())
-            cur.execute(selectionString2)
-            print(cur.fetchall())
-            cur.execute(selectionString3)
-            print(cur.fetchall())
+            pullRecipe(recipe_id)
         # Searches the database for recipes that have a cook time less than 60 minutes
         elif queryChoice == '4':
             max_cook_time = str(input('Enter a max cook time in minutes: '))
             cur.execute("Select * FROM time_view WHERE minutes < %s and time_type = 'cook'", max_cook_time)
-            print(cur.fetchall())
+            printFormattedSQL(cur.fetchall())
             recipe_id = str(input('Select a recipe, using the recipe id, from above: '))
-            selectionString1 = 'Select ingredient_name FROM ingredient_view where recipe_id = ' + recipe_id
-            selectionString2 = 'Select step_number, directions from directions where recipe_id = ' + recipe_id 
-            selectionString3 = 'Select time_type, minutes from time_view where recipe_id = ' + recipe_id
-            cur.execute(selectionString1)
-            print(cur.fetchall())
-            cur.execute(selectionString2)
-            print(cur.fetchall())
-            cur.execute(selectionString3)
-            print(cur.fetchall())
+            pullRecipe(recipe_id)
         elif queryChoice == '5':
-            cur.execute('Select * FROM difficulty')
-            print(cur.fetchall())
+            cur.execute('Select distinct difficulty_level FROM difficulty')
+            printFormattedSQL(cur.fetchall())
             difficulty = input('Select a difficulty from above: ')
             difficulty = checkString(difficulty)
             # This might need a LIKE operator instead
-            selectionString = 'Select * FROM difficulty_view WHERE difficulty_level = ' + difficulty
+            selectionString = 'Select recipe_id, recipe_name FROM difficulty_view WHERE difficulty_level = ' + difficulty
             cur.execute(selectionString)
-            print(fetchall())
+            printFormattedSQL(cur.fetchall())
             recipe_id = str(input('Select a recipe, using the recipe id, from above: '))
-            selectionString1 = 'Select ingredient_name FROM ingredient_view where recipe_id = ' + recipe_id
-            selectionString2 = 'Select step_number, directions from directions where recipe_id = ' + recipe_id 
-            selectionString3 = 'Select time_type, minutes from time_view where recipe_id = ' + recipe_id
-            cur.execute(selectionString1)
-            print(cur.fetchall())
-            cur.execute(selectionString2)
-            print(cur.fetchall())
-            cur.execute(selectionString3)
-            print(cur.fetchall())
+            pullRecipe(recipe_id)
         yn = str(input('Would you like to continue? Enter yes or no: '))
         if yn == "no":
             loop = "no"
@@ -167,6 +137,7 @@ def main():
                 else:
                     loop = "yes"
             
-        cur.close()
-        conn.close()
+        
 main()
+cur.close()
+conn.close()
