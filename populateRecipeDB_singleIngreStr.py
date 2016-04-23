@@ -210,7 +210,8 @@ def main():
                         if (categorySubcategory not in categorySubcatDB):
                             categorySubcatDB.append(categorySubcategory)
                             insert("categorysubcategory", "category_type, subcategory_type", strDB(categoryLine) + ", " + strDB(subcategory))
-                            insert("recipesubcategory", "recipe_id, subcategory_type", str(recipe_id) + ", " + strDB(subcategory))
+                        insert("recipesubcategory", "recipe_id, subcategory_type", str(recipe_id) + ", " + strDB(subcategory))
+                            
 
         elif (line == "END"):
             readingRecipe = False
