@@ -268,10 +268,10 @@ def main():
     
 
     # Starts the crawler on article url specified and initializes a string to store the previous recipe
-    newRecipe = "/recipes/food-network-kitchens/roast-chicken-with-spring-vegetables-recipe.html"
+    newRecipe = "/recipes/tyler-florence/smoky-roasted-chicken-and-citrus-salsa-recipe.html"
     previousRecipe = ""
     exampleDatabase = []
-    maxDatabaseLength = 20
+    maxDatabaseLength = 1
     countDuplicates = 0
     numRetry = 0
     
@@ -324,6 +324,7 @@ def main():
                 for f in extractFunctions:
                     data = f(bsObj)
                     if (data is None):
+                        txtFile.write("COULD NOT PARSE\n\n")
                         continue
                     dataProcessing(data, txtFile)
 
@@ -335,7 +336,7 @@ def main():
                 countDuplicates += 1
             
                 
-
+    txtFile.write("END")
     # Populated database
     print("These recipes were added to your database:")
     for recipe in exampleDatabase:
