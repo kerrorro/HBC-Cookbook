@@ -3,7 +3,7 @@ import saveRecipe
 
 # Initiates PyMySQL connection and then creates a cursor
 conn = pymysql.connect(host='127.0.0.1', port=3306, charset = 'utf8',
-                        user='root', passwd= '79461385258', db = 'Cookbook')
+                        user='root', passwd= 'aznxdog94', db = 'cookbook')
 cur = conn.cursor()
 
 # Adds quotes to items that need it before executed as SQL statements
@@ -24,18 +24,11 @@ def printFormattedSQL(sqlOutput):
 def makeList(sql):
     cur.execute(sql)
     line = cur.fetchall()
-    line = str(line)
-    return line.replace('(', '').replace(')', '').replace(',', '').replace('"', "'").strip("'").split("' '")
-
-# Recipe list
-def recipeList(sql):
-    cur.execute(sql)
-    line = cur.fetchall()
-    recipe_id_list = []
+    mlist = []
     for element in line:
-        recipe_id_list.append(str(element[0]))
-    return(recipe_id_list)
-        
+        mlist.append(str(element[0]))
+    return(mlist)
+
 # Prints out all releventa information associated with an input recipe_id
 def pullRecipe(recipe_id):
     selectionString1 = 'Select ingredient_name FROM ingredient_view where recipe_id = ' + recipe_id
@@ -111,7 +104,7 @@ def main():
                     category_list = makeList(sql)
                     print("")
                     # Checks if user entered a category that exists
-                    while category.strip("'").upper() not in category_list:
+                    while category.strip("'").strip('"').upper() not in category_list:
                         print("Error. That is not one of the categories.")
                         category = str(input('Enter a category: '))
                         category = checkString(category)
@@ -141,7 +134,7 @@ def main():
                     recipe_id = str(input('Select a recipe using the recipe id from above: '))
                     print("")
                     # Checks if user entered a recipe that exists
-                    while recipe_id not in recipeList(sql):
+                    while recipe_id not in makeList(sql):
                         print("Error. That is not one of the recipes in " + subCategory)
                         recipe_id = str(input('Select a recipe using the recipe id from above: '))
                         print("")
@@ -172,7 +165,7 @@ def main():
                     recipe_id = str(input('Select a recipe using the recipe id from above: '))
                     print("")
                     # Checks if user entered a recipe that exists
-                    while recipe_id not in recipeList(sql):
+                    while recipe_id not in makeList(sql):
                         print("Error. That is not one of the recipes by chef " + author.replace('%', ''))
                         recipe_id = str(input('Select a recipe using the recipe id from above: '))
                         print("")
@@ -199,7 +192,7 @@ def main():
                     recipe_id = str(input('Select a recipe using the recipe id from above: '))
                     print("")
                     # Checks if user entered a recipe that exists
-                    while recipe_id not in recipeList(sql):
+                    while recipe_id not in makeList(sql):
                         print("Error. That is not one of the recipes with the ingredient " + ingredient.replace('%', ''))
                         recipe_id = str(input('Select a recipe using the recipe id from above: '))
                         print("")
@@ -244,7 +237,7 @@ def main():
                     recipe_id = str(input('Select a recipe using the recipe id from above: '))
                     print("")
                     # Checks if user entered a recipe that exists
-                    while recipe_id not in recipeList(sql):
+                    while recipe_id not in makeList(sql):
                         print("Error. That is not one of the recipes with difficulty level " + difficulty)
                         recipe_id = str(input('Select a recipe using the recipe id from above: '))
                         print("")            
