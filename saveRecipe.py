@@ -173,7 +173,7 @@ def populateDB():
             consecNewLineCount = 0
             while (consecNewLineCount != 2):
                 categoryLine = file.readline().strip()
-                categoryLine = escapeCharCheck(categoryLine)
+                
                 if (categoryLine == ""):
                     consecNewLineCount += 1
                     continue
@@ -182,7 +182,9 @@ def populateDB():
                 if (is_upper(categoryLine)):
                     # Creates lists from the database to ensure no duplicate entries.
                     categoryDB = createDBList("SELECT * FROM category")
+                    
                     if (categoryLine not in categoryDB):
+                        categoryLine = escapeCharCheck(categoryLine)
                         insert("category", "category_type", strDB(categoryLine))
                     subcategoryList = []
                     subcategoryLine = categoryLine
