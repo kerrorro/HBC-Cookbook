@@ -3,7 +3,7 @@ import saveRecipe
 
 # Initiates PyMySQL connection and then creates a cursor
 conn = pymysql.connect(host='127.0.0.1', port=3306, charset = 'utf8',
-                        user='root', passwd= 'aznxdog94', db = 'cookbook')
+                        user='root', passwd= '79461385258', db = 'Cookbook')
 cur = conn.cursor()
 
 # Adds quotes to items that need it before executed as SQL statements
@@ -64,6 +64,7 @@ def main():
                 recipe_id = saveRecipe.populateDB()
                 if recipe_id is not None:
                     recipe_id = str(recipe_id)
+                    print(recipe_id)
                     print("The following recipe has been added to the database: ")
                     print()
                     pullRecipe(recipe_id)
@@ -149,6 +150,9 @@ def main():
                     author = checkString(author)
                     sql = "Select recipe_id, recipe_name FROM Recipe WHERE author_name LIKE " + author
                     author_list = makeList(sql)
+                    if len(author_list) == 0:
+                        print("No recipes of that sort.")
+                        break
                     print("")
                     # While there is no recipes with that ingredient, prompt the user
                     while author_list == [''] :
@@ -176,6 +180,9 @@ def main():
                     ingredient = checkString(ingredient)
                     sql = "Select * FROM ingredient_view WHERE ingredient_name LIKE " + ingredient
                     recipes_list = makeList(sql)
+                    if len(recipes_list) == 0:
+                        print("No recipes of that sort.")
+                        break
                     print("")
                     # While there is no recipes with that ingredient, prompt the user
                     while recipes_list == [''] :
