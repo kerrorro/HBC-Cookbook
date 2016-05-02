@@ -3,7 +3,7 @@ import saveRecipe
 
 # Initiates PyMySQL connection and then creates a cursor
 conn = pymysql.connect(host='127.0.0.1', port=3306, charset = 'utf8',
-                        user='root', passwd= '79461385258', db = 'Cookbook')
+                        user='root', passwd= 'aznxdog94', db = 'cookbook')
 cur = conn.cursor()
 
 # Adds quotes to items that need it before executed as SQL statements
