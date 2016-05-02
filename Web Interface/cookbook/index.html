@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+	<!-- Latest compiled and minified CSS -->
+
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+
+	<script type="text/javascript" src="cookbook.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="main.css">
+</head>
+
+<body>
+<header>
+	<h1 class="jumbotron"><small>Welcome to HBC's Cookbook</small></h1>
+	<h2>Save or Find a Recipe</h2>
+	<ul class="nav nav-pills">
+		<li role="presentation" id="save_tab"><a href="#">Save</a></li>
+		<li role="presentation" id="find_tab"><a href="#">Find</a></li>
+	</ul>
+</header>
+<br>
+<div id = "main" class="container">
+	<div id = 'find_container' class='container' style='display:none'>
+		<table class='table table-striped'>
+			<thead><i>Please Choose a Query by selecting a number between 1 and 5</i></thead>
+			<tr>
+				<td>Query 1 selects recipes based upon categories</td>
+			</tr>
+			<tr>
+				<td>Query 2 selects recipes by your favorite chef</td>
+			</tr>
+			<tr>
+				<td>Query 3 selects recipes by a particular ingredient</td>
+			</tr>
+			<tr>
+				<td>Query 4 selects recipes based on an inputted max cook time</td>
+			</tr>
+			<tr>
+				<td>Query 5 selects recipes based upon difficulty</td>
+			</tr>
+		</table>
+	</div>
+	<div id = 'save_container' class='container' style='display:none'>
+		<table class='table table-striped'>
+			<thead><i>Enter Recipe URL</i></thead>
+			<form id ='url_form' onsubmit='save_url()'>
+				<tr>
+					<td>
+						<input type='text' id='url' placeholder='ex: www.foodnetwork.com'>
+					</td>
+				</tr>
+
+
+				<tr>
+					<td>
+						<input class = 'btn btn-success' type='submit' value='submit' id='url_submit'>
+					</td>
+				</tr>
+			</form>
+		</table>
+	</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+header{
+	margin-left: 10%;
+	margin-right: 30%;
+	font-family: Tahoma, sans-serif;
+}
+.table{
+	width:60%;
+	border:1px solid;
+}
+h1{
+	text-align: center;
+
+}
+.jumbotron{
+	line-height: 30%;
+}
+#main {
+	margin-left:10%;
+	margin-right: 30%;
+}
+h2{
+	font-size: 120%;
+}
+.btn{
+	border-radius: 1px;
+}
