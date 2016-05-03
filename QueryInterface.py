@@ -80,10 +80,10 @@ def main():
             while loop == "yes":
                 # Prints the list of possible queries
                 print('Choose between the following options:\n')
-                print('Query 1 filters based upon categories\n')
-                print('Query 2 allows you to choose select a favorite chef\n')
-                print('Query 3 allows you to use a particular ingredient\n')
-                print('Query 4 selects recipes based on an inputted cook time\n')
+                print('Query 1 selects recipes based upon categories\n')
+                print('Query 2 selects recipes by your favorite chef\n')
+                print('Query 3 selects recipes by a particular ingredient\n')
+                print('Query 4 selects recipes based on an inputted max cook time\n')
                 print('Query 5 selects recipes based upon difficulty\n')
                 queryList = ['1','2','3','4','5']
                 queryChoice = str(input('Input a number between 1 and 5 to choose your query: '))
@@ -100,12 +100,13 @@ def main():
                     printFormattedSQL(cur.fetchall())
                     # Prompts user to select a category
                     category = str(input('Enter a category: '))
-                    category = checkString(category)
                     # Puts the categories into a list to use as a check later
                     category_list = makeList(sql)
+                    print(category_list)
                     print("")
                     # Checks if user entered a category that exists
-                    while category.strip("'").strip('"').upper() not in category_list:
+                    while category.upper() not in category_list:
+                        print(category.upper())
                         print("Error. That is not one of the categories.")
                         category = str(input('Enter a category: '))
                         category = checkString(category)
@@ -113,20 +114,20 @@ def main():
                     # Subcategory Menu: Executes and prints the list of subcategories that connects to chosen category
                     print("Subcategories within " + category + " : " )
                     # Creates a string to use for the next SQL command
+                    category = checkString(category)
                     sql = 'Select subcategory_type FROM CategorySubcategory WHERE category_type = ' + str(category)
                     cur.execute(sql)
                     printFormattedSQL(cur.fetchall())
                     subCategory = input('Enter a subcategory: ')
-                    subCategory = checkString(subCategory)
                     # Put the subcategories into a list to use as a check later
                     subCategory_list = makeList(sql)
                     print("")
                     # Checks if user entered a subcategory that exists
-                    while subCategory.strip("'").title() not in subCategory_list:
+                    while subCategory.title() not in subCategory_list:
                         print("Error. That is not one of the subcategories in " + category)
                         subCategory = input('Enter a subcategory: ')
-                        subCategory = checkString(subCategory)
                         print("")
+                    subCategory = checkString(subCategory)    
                     sql = 'Select recipe_id, recipe_name FROM categorysubcategory_view WHERE subcategory_type = ' + subCategory
                     # Recipe Menu: Executes and print final query
                     print("Recipe(s) in the " + subCategory + " subcategory: ")
@@ -142,7 +143,7 @@ def main():
                     # Pulls and print the direction, ingredients and time of the recipe
                     pullRecipe(recipe_id)   
                 elif queryChoice == '2':
-                    # Prints a list of authors
+                    # Prints a list of chefs
                     cur.execute('Select DISTINCT author_name FROM Recipe')
                     printFormattedSQL(cur.fetchall())
                     author = input('Enter a chef from above: ')
@@ -154,7 +155,7 @@ def main():
                         print("No recipes of that sort.")
                         break
                     print("")
-                    # While there is no recipes with that ingredient, prompt the user
+                    # While there is no recipes with that chef, prompt the user
                     while author_list == [''] :
                         print("No recipes by chef: "+ author.replace('%', ''))
                         author = input('Enter a chef from above: ')
@@ -228,16 +229,15 @@ def main():
                     cur.execute(sql)
                     printFormattedSQL(cur.fetchall())
                     difficulty = input('Select a difficulty from above: ')
-                    difficulty = checkString(difficulty)
                     print("")
                     # Make a list for difficulties to use as a check
                     difficulty_list = makeList(sql)
-                    while difficulty.strip("'").title() not in difficulty_list:
+                    while difficulty.title() not in difficulty_list:
                         print("Error. That is not one of the difficulty levels.")
                         difficulty = input('Select a difficulty from above: ')
-                        difficulty = checkString(difficulty)
                         print("")
                     # This might need a LIKE operator instead
+                    difficulty = checkString(difficulty)
                     sql = 'Select recipe_id, recipe_name FROM difficulty_view WHERE difficulty_level = ' + difficulty
                     cur.execute(sql)
                     printFormattedSQL(cur.fetchall())
