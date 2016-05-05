@@ -3,7 +3,7 @@ import saveRecipe
 
 # Initiates PyMySQL connection and then creates a cursor
 conn = pymysql.connect(host='127.0.0.1', port=3306, charset = 'utf8',
-                        user='root', passwd= 'aznxdog94', db = 'cookbook')
+                        user='root', passwd= '79461385258', db = 'cookbook')
 cur = conn.cursor()
 
 # Adds quotes to items that need it before executed as SQL statements
@@ -36,7 +36,7 @@ def pullRecipe(recipe_id):
     selectionString3 = 'Select time_type, minutes from time_view where recipe_id = ' + recipe_id
     print("Ingredients")
     cur.execute(selectionString1)
-    printFormattedSQL(cur.fetchall())
+    print(cur.fetchall())
     print("")
     print("Directions")
     cur.execute(selectionString2)
@@ -56,12 +56,11 @@ def main():
         while fxSelection != 'save' and fxSelection != 'find':
             fxSelection = str(input('Error. Enter save or find: '))
         if fxSelection == 'save':
-            # Allows user to input foodnetwork.com text-based recipe. Extracts the data and populates that database.
             loop = True
             while loop:
                 # Adds to database and returns the recipe_id
                 saveRecipe.parseRecipe()
-                recipe_id = saveRecipe.populateDB()
+                recipe_id = saveRecipe.populateDB(cur)
                 if recipe_id is not None:
                     recipe_id = str(recipe_id)
                     print(recipe_id)
@@ -73,7 +72,7 @@ def main():
                     yn = str(input("Error. Enter yes or no: "))
                 if yn == "no":
                     loop = False
-
+             
         else:
             # Finds recipes based on pre-defined queries.
             loop = "yes"

@@ -8,10 +8,10 @@ import re
 # Connect to database
 conn = pymysql.connect(host='127.0.0.1', port=3306, charset = 'utf8',
                        user='root', passwd= '79461385258', db = 'Cookbook')
-cur = conn.cursor()
+#cur = conn.cursor()
 
 # Creates a list containing the string elements in the tuples obtained from database queries.
-def createDBList(sql):
+def createDBList(sql, cur):
     cur.execute(sql)
     DBtuple = cur.fetchall()
     
@@ -31,7 +31,7 @@ def createDBList(sql):
         return databaseDict
 
 
-def select(column, table, conditionCol = "", conditionCol2 = "", conditionVal = "", conditionVal2 = ""):
+def select(cur, column, table, conditionCol = "", conditionCol2 = "", conditionVal = "", conditionVal2 = ""):
     #sql = "SELECT ingredient_id FROM ingredient WHERE ingredient_name = %s" % (title)
     sql = "SELECT %s FROM %s" % (column, table)
     if (conditionCol != ""):
@@ -42,12 +42,12 @@ def select(column, table, conditionCol = "", conditionCol2 = "", conditionVal = 
     cur.execute(sql)
 
 # Updates a column for specified field.
-def update(table, column, colVal, conditionCol, conditionVal):        
+def update(cur, table, column, colVal, conditionCol, conditionVal):        
     cur.execute("UPDATE %s SET %s = %s WHERE %s = '%s'" % (table, column, colVal, conditionCol, conditionVal))
     cur.connection.commit()
 
 # To insert multiple values into their corresponding columns, pass in as a string separated by commas
-def insert(table, columns, values):
+def insert(cur, table, columns, values):
     cur.execute("INSERT INTO %s(%s) VALUES (%s)" % (table, columns, values))
     cur.connection.commit()
 
@@ -76,7 +76,7 @@ def is_number(s):
 def is_upper(s):
     return s == s.upper()
 
-def populateDB():
+def populateDB(cur):
     file = open('recipe.txt', 'r')
     readingRecipe = True
     recipe_id = None
@@ -94,16 +94,16 @@ def populateDB():
             # Check if the recipe by that author is already in the DB. There's a TypeError if the recipe cannot be queried (not in DB)
             try:
                 # If fetchone doesn't raise an error, the recipe is already in the database
-                select("recipe_id", "recipe", conditionCol = "recipe_name", conditionVal = strDB(title), conditionCol2 = "author_name", conditionVal2 = strDB(author))
+                select(cur, "recipe_id", "recipe", conditionCol = "recipe_name", conditionVal = strDB(title), conditionCol2 = "author_name", conditionVal2 = strDB(author))
                 recipe_id = cur.fetchone()[0]
                 print ("FAILED TO ADD: Recipe is already in the database (recipe_id = %s)" % recipe_id)
                 print()
                 break
             except TypeError:
                 #TypeError occurs when cur.fetchone() has nothing to fetch (i.e. the recipe is not in the DB)
-                insert("recipe", "recipe_name, author_name", strDB(title) + ", " + strDB(author))
+                insert(cur, "recipe", "recipe_name, author_name", strDB(title) + ", " + strDB(author))
                 # Grabs the recipe id to be used in future insert statements
-                select("recipe_id", "recipe", conditionCol = "recipe_name", conditionVal = strDB(title))
+                select(cur, "recipe_id", "recipe", conditionCol = "recipe_name", conditionVal = strDB(title))
                 recipe_id = cur.fetchone()[0]
 
         elif (line == "DIRECTIONS"):
@@ -116,7 +116,7 @@ def populateDB():
                     break
                 directionList.append(directionLine)
             for i in range(len(directionList)):
-                insert("directions", "recipe_id, step_number, directions",
+                insert(cur, "directions", "recipe_id, step_number, directions",
                        str(recipe_id) + ", " + str(i+1) + ", " + strDB(directionList[i]))
         
         elif (line == "INGREDIENTS"):
@@ -127,16 +127,16 @@ def populateDB():
                 ingredient = escapeCharCheck(ingredient)
                 if (ingredient == ""):
                     continue
-                ingredientDB = createDBList("SELECT ingredient_name FROM ingredient")
+                ingredientDB = createDBList("SELECT ingredient_name FROM ingredient", cur)
                 if (ingredient not in ingredientDB):
-                    insert("ingredient", "ingredient_name", strDB(ingredient))
+                    insert(cur, "ingredient", "ingredient_name", strDB(ingredient))
                 # Grabs ingredient_id for the added ingredient
-                select("ingredient_id", "ingredient", conditionCol = "ingredient_name", conditionVal = strDB(ingredient))
+                select(cur, "ingredient_id", "ingredient", conditionCol = "ingredient_name", conditionVal = strDB(ingredient))
                 ingredient_id = cur.fetchone()[0]
                 # Updates junction table with recipe_id, ingredient_id, measurement_type, and quantity if the ingredient isn't already listed for that recipe
                 if (ingredient not in ingredientsPerRecipe):
                     ingredientsPerRecipe.append(ingredient)
-                    insert("recipeingredient", "recipe_id, ingredient_id", str(recipe_id) + ", " + str(ingredient_id))
+                    insert(cur, "recipeingredient", "recipe_id, ingredient_id", str(recipe_id) + ", " + str(ingredient_id))
                    
         elif (line == "TIMES"):
             timeDict = {}
@@ -153,19 +153,19 @@ def populateDB():
                 if (not is_number(timeLines)):
                     timeDict[timeLines] = file.readline().strip()
             for time_type, minutes in timeDict.items():
-                insert("time", "recipe_id, time_type, minutes",
+                insert(cur, "time", "recipe_id, time_type, minutes",
                        str(recipe_id) + ", " + strDB(time_type) + ", " + str(minutes))
 
         elif (line == "SERVINGS"):
             # Updates the recipe table with the recipe's serving
             servings = file.readline().strip()
             servings = escapeCharCheck(servings)
-            update("recipe", "servings", strDB(servings), "recipe_id", str(recipe_id))            
+            update(cur, "recipe", "servings", strDB(servings), "recipe_id", str(recipe_id))            
             
         elif (line == "LEVEL"):
             level = file.readline().strip()
             level = escapeCharCheck(level)
-            insert("difficulty", "recipe_id, difficulty_level",
+            insert(cur, "difficulty", "recipe_id, difficulty_level",
                        str(recipe_id) + ", " + strDB(level))
         
                 
@@ -181,11 +181,11 @@ def populateDB():
                     consecNewLineCount = 0
                 if (is_upper(categoryLine)):
                     # Creates lists from the database to ensure no duplicate entries.
-                    categoryDB = createDBList("SELECT * FROM category")
+                    categoryDB = createDBList("SELECT * FROM category", cur)
                     
                     if (categoryLine not in categoryDB):
                         categoryLine = escapeCharCheck(categoryLine)
-                        insert("category", "category_type", strDB(categoryLine))
+                        insert(cur, "category", "category_type", strDB(categoryLine))
                     subcategoryList = []
                     subcategoryLine = categoryLine
                     while(subcategoryLine != ""):
@@ -198,14 +198,14 @@ def populateDB():
                     for subcategory in subcategoryList:
                         
                         # Creates lists from the database to ensure no duplicate entries.
-                        subcategoryDB= createDBList("SELECT * FROM subcategory")
+                        subcategoryDB= createDBList("SELECT * FROM subcategory", cur)
                         if (subcategory not in subcategoryDB):
-                            insert("subcategory", "subcategory_type", strDB(subcategory))
+                            insert(cur, "subcategory", "subcategory_type", strDB(subcategory))
                         # Creates lists from the database to ensure no duplicate entries.
-                        categorySubcatDB = createDBList("SELECT category_type, subcategory_type FROM categorysubcategory")
+                        categorySubcatDB = createDBList("SELECT category_type, subcategory_type FROM categorysubcategory", cur)
                         if ((categoryLine not in categorySubcatDB.keys()) or (subcategory not in categorySubcatDB[categoryLine])):
-                            insert("categorysubcategory", "category_type, subcategory_type", strDB(categoryLine) + ", " + strDB(subcategory))
-                        insert("recipesubcategory", "recipe_id, subcategory_type", str(recipe_id) + ", " + strDB(subcategory))
+                            insert(cur, "categorysubcategory", "category_type, subcategory_type", strDB(categoryLine) + ", " + strDB(subcategory))
+                        insert(cur, "recipesubcategory", "recipe_id, subcategory_type", str(recipe_id) + ", " + strDB(subcategory))
                             
 
         elif (line == "END"):
@@ -458,4 +458,5 @@ def parseRecipe():
         else:
             print("Invalid URL.")
             print()
+
 
