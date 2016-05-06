@@ -1,5 +1,13 @@
 # HBC
 
+# To Run:
+- Create tables (statements below)
+- (Optional) Run FoodNetwork_CrawlerParser_WriteToTextv2.py to generate new extractedRecipes.txt data set
+- Run populateRecipeDB_singleIngreStr.py to populate database using formatted data in extractedRecipes.txt
+- Create views (statements below)
+- Run QueryInterface.py
+
+
 # Create Statements
 
 CREATE TABLE recipe (
