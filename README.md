@@ -1,4 +1,5 @@
 # HBC
+HBC Cookbook is a command line application that allows users to save or query saved www.foodnetwork.com recipes. It was created for CS327E: Elements of Databases at UT Austin.
 
 # To Run:
 - Create tables (statements below)
